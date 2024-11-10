@@ -11,18 +11,14 @@
                 </div>
                 <div class="card-body p-3">
                     <div class="row">
-                        <form action="{{ route('gurus.store') }}" method="POST">
+                        <form id="createGuruForm" method="POST">
                             @csrf
 
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label class="h6 text-capitalize" for="nama">Nama Guru</label>
                                     <input type="text" class="form-control @error('nama') is-invalid @enderror" id="nama" name="nama" placeholder="Nama Guru">
-                                        @error('nama')
-                                            <span class="invalid-feedback" role="alert">
-                                                <strong>{{ $message }}</strong>
-                                            </span>
-                                        @enderror
+                                    <span class="text-danger" id="namaError"></span>
                                 </div>
                             </div>
                             <div class="col-md-12 mt-2">
@@ -34,16 +30,11 @@
                                             <option value="{{ $r->kelas }}">{{ $r->kelas }}</option>
                                         @endforeach
                                     </select>
-                                    @error('kelas')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                    @enderror
+                                    <span class="text-danger" id="kelasError"></span>
                                 </div>
                             </div>
                             <div class="text-center">
-                                <button type="submit"
-                                    class="btn btn-lg btn-primary btn-lg w-100 mt-4 mb-0">Create</button>
+                                <button type="button" id="submitGuruBtn" class="btn btn-lg btn-primary btn-lg w-100 mt-4 mb-0">Create</button>
                             </div>
                         </form>
                     </div>
@@ -51,4 +42,53 @@
             </div>
         </div>
     </div>
+
+    <!-- Include jQuery and SweetAlert if not already included -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('#submitGuruBtn').click(function(e) {
+                e.preventDefault();
+
+                // Clear previous error messages
+                $('#namaError').text('');
+                $('#kelasError').text('');
+
+                // Collect form data
+                let formData = {
+                    _token: $('input[name="_token"]').val(),
+                    nama: $('#nama').val(),
+                    kelas: $('#kelas').val(),
+                };
+
+                // AJAX POST request
+                $.ajax({
+                    url: "{{ route('gurus.store') }}",
+                    type: "POST",
+                    data: formData,
+                    success: function(response) {
+                        Swal.fire('Success', 'Data Guru Berhasil Ditambahkan!', 'success');
+                        // Optionally reset the form or perform any other actions
+                        $('#createGuruForm')[0].reset();
+                    },
+                    error: function(xhr) {
+                        if (xhr.status === 422) {
+                            let errors = xhr.responseJSON.errors;
+                            if (errors.nama) {
+                                $('#namaError').text(errors.nama[0]);
+                            }
+                            if (errors.kelas) {
+                                $('#kelasError').text(errors.kelas[0]);
+                            }
+                            Swal.fire('Error', 'Ups, Ada Sesuatu yang Salah!', 'error');
+                        } else {
+                            Swal.fire('Error', 'Terjadi Kesalahan. Coba lagi!', 'error');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
 @endsection
